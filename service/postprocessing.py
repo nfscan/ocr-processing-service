@@ -4,6 +4,7 @@ from itertools import ifilter, imap
 import regex as re
 from validation.cnpj import Cnpj
 from validation.date import Date
+from fuzzywuzzy import fuzz
 import logging
 
 
@@ -125,10 +126,18 @@ class TaxReceiptFuzzyRegex(object):
                     date_priority_1_matches[0]
                 )
 
+        matchedLines = []
+        for line in lines:
+            if len(line.strip()) <= 4:
+                continue
+            score = fuzz.partial_ratio(line.strip(), "TOTAL")
+            if score > 60:
+                matchedLines.append(line.strip())
+
         # Try to get a good match for Total
         total_priority_1_matches = BaseFuzzyRegex.approximate_match(
             word_re='[TOTAL|R\$]\s*\d+[\,\.]\d{2}$',
-            lines=lines
+            lines=matchedLines
         )
 
         if not total_priority_1_matches is None and len(total_priority_1_matches) > 0:
